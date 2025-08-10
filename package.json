@@ -8,13 +8,12 @@
     "dev": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "socket.io": "^4.7.2"
+    "express": "^4.18.2"
   },
   "engines": {
     "node": ">=14.0.0"
   },
-  "keywords": ["chat", "websocket", "realtime"],
+  "keywords": ["chat", "realtime", "sse"],
   "author": "Your Name",
   "license": "MIT"
 }
