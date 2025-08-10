@@ -1,35 +1,48 @@
 const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
+const path = require('path');
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+let clients = [];
+let messages = [];
 
 app.use(express.static('public'));
+app.use(express.json());
 
+// Serve the main page
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-io.on('connection', (socket) => {
-    console.log('A user connected');
+// SSE endpoint for real-time updates
+app.get('/events', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+    });
+
+    clients.push(res);
+
+    req.on('close', () => {
+        clients = clients.filter(client => client !== res);
+    });
+});
+
+// API endpoint to send messages
+app.post('/send-message', (req, res) => {
+    const message = req.body.message;
+    messages.push(message);
     
-    socket.on('chat message', (msg) => {
-        io.emit('chat message', msg);
+    // Send to all connected clients
+    clients.forEach(client => {
+        client.write(`data: ${JSON.stringify({ message })}\n\n`);
     });
     
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
+    res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
